@@ -1,18 +1,19 @@
 {
     "family": "aoc-ec2-nginx",
-    "taskRoleArn": "{{ecsTaskRoleArn}}",
-    "executionRoleArn": "{{ecsExecutionRoleArn}}",
+    "taskRoleArn": "ecs-aoc",
+    "executionRoleArn": "ecs-aoc",
     "networkMode": "bridge",
     "containerDefinitions": [
       {
         "name": "apple",
         "image": "hashicorp/http-echo",
+        "cpu": "100",
+        "memory": "100",
         "essential": true,
         "command": ["-text=apple"],
         "portMappings": [
           {
-            "containerPort": 5678,
-            "hostPort": 5678
+            "containerPort": 5678
           }
         ],
         "dependsOn": [],
@@ -20,7 +21,7 @@
           "logDriver": "awslogs",
           "options": {
             "awslogs-group": "/ecs/aoc-ec2-nginx-apple",
-            "awslogs-region": "{{region}}",
+            "awslogs-region": "us-west-2",
             "awslogs-stream-prefix": "ecs",
             "awslogs-create-group": "True"
           }
@@ -29,20 +30,47 @@
       {
         "name": "banana",
         "image": "hashicorp/http-echo",
+        "cpu": "100",
+        "memory": "100",
         "essential": true,
         "command": ["-text=banana"],
         "dependsOn": [],
         "portMappings": [
           {
-            "containerPort": 5678,
-            "hostPort": 5678
+            "containerPort": 5678
           }
         ],
         "logConfiguration": {
           "logDriver": "awslogs",
           "options": {
             "awslogs-group": "/ecs/aoc-ec2-nginx-banana",
-            "awslogs-region": "{{region}}",
+            "awslogs-region": "us-west-2",
+            "awslogs-stream-prefix": "ecs",
+            "awslogs-create-group": "True"
+          }
+        }
+      },
+      {
+        "name": "traffic-generator",
+        "image": "ellerbrock/alpine-bash-curl-ssl",
+        "cpu": "100",
+        "memory": "100",
+        "essential": true,
+        "command": ["/bin/bash", "-c", "while :; do curl http://nginx-reverse-proxy/apple > /dev/null 2>&1; curl http://nginx-reverse-proxy/banana > /dev/null 2>&1; sleep 1; done"],
+        "dependsOn": [
+          {
+            "containerName": "nginx-reverse-proxy",
+            "condition": "START"
+          }
+        ],
+        "links": [
+          "nginx-reverse-proxy"
+        ],
+        "logConfiguration": {
+          "logDriver": "awslogs",
+          "options": {
+            "awslogs-group": "/ecs/aoc-ec2-nginx-traffic-generator",
+            "awslogs-region": "us-west-2",
             "awslogs-stream-prefix": "ecs",
             "awslogs-create-group": "True"
           }
@@ -50,7 +78,9 @@
       },
       {
         "name": "nginx-reverse-proxy",
-        "image": "<nginx-reverse-proxy-image-url>",
+        "image": "kohrapha/reverse-proxy",
+        "cpu": "256",
+        "memory": "256",
         "essential": true,
         "portMappings": [
           {
@@ -66,34 +96,33 @@
           "logDriver": "awslogs",
           "options": {
             "awslogs-group": "/ecs/aoc-ecs-nginx-reverse-proxy",
-            "awslogs-region": "{{region}}",
+            "awslogs-region": "us-west-2",
             "awslogs-stream-prefix": "ecs",
             "awslogs-create-group": "True"
           }
         }
       },
       {
-        "name": "traffic-generator",
-        "image": "ellerbrock/alpine-bash-curl-ssl",
+        "name": "nginx-prometheus-exporter",
+        "image": "nginx/nginx-prometheus-exporter:0.8.0",
+        "cpu": "256",
+        "memory": "256",
         "essential": true,
-        "command": ["/bin/bash", "-c", "while :; do curl http://{{external_ip}}/apple > /dev/null 2>&1; curl http://{{external_ip}}/banana > /dev/null 2>&1; sleep 1; done"],
+        "command": ["-nginx.scrape-uri", "http://nginx-reverse-proxy:80/metrics"],
         "portMappings": [
           {
-            "containerPort": 5678,
-            "hostPort": 5678
+            "containerPort": 9113
           }
         ],
-        "dependsOn": [
-          {
-            "containerName": "nginx-reverse-proxy",
-            "condition": "START"
-          }
+        "links": [
+          "nginx-reverse-proxy"
         ],
+        "dependsOn": [],
         "logConfiguration": {
           "logDriver": "awslogs",
           "options": {
-            "awslogs-group": "/ecs/aoc-ec2-nginx-traffic-generator",
-            "awslogs-region": "{{region}}",
+            "awslogs-group": "/ecs/aoc-ecs-nginx-prometheus-exporter",
+            "awslogs-region": "us-west-2",
             "awslogs-stream-prefix": "ecs",
             "awslogs-create-group": "True"
           }
@@ -101,7 +130,9 @@
       },
       {
         "name": "aws-otel-collector",
-        "image": "aottestbed/awscollector:v0.1.12",
+        "image": "kohrapha/awscollector:v0.1.13",
+        "cpu": "100",
+        "memory": "100",
         "portMappings": [
           {
             "containerPort": 55680,
@@ -117,8 +148,8 @@
         "logConfiguration": {
           "logDriver": "awslogs",
           "options": {
-            "awslogs-group": "/ecs/ecs-aws-otel-sidecar-collector",
-            "awslogs-region": "{{region}}",
+            "awslogs-group": "/ecs/aoc-ecs-collector",
+            "awslogs-region": "us-west-2",
             "awslogs-stream-prefix": "ecs",
             "awslogs-create-group": "True"
           }
@@ -127,8 +158,6 @@
     ],
     "requiresCompatibilities": [
       "EC2"
-    ],
-    "cpu": "256",
-    "memory": "512"
+    ]
   }
   
