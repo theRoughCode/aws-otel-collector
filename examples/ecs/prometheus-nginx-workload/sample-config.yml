@@ -1,0 +1,26 @@
+extensions:
+    health_check:
+  
+  receivers:
+    prometheus:
+      config:
+        scrape_configs:
+        - job_name: ec2
+          static_configs:
+          - targets: ['nginx-prometheus-exporter:9113']
+  
+  exporters:
+    awsemf:
+      log_group_name: 'awscollector'
+      region: 'us-west-2'
+      log_stream_name: otel-stream
+      dimension_rollup_option: 'NoDimensionRollup'
+  
+  service:
+    pipelines:
+      metrics:
+        receivers: [prometheus]
+        exporters: [awsemf]
+  
+    extensions: [health_check]
+  

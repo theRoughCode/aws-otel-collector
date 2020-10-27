@@ -130,9 +130,9 @@
       },
       {
         "name": "aws-otel-collector",
-        "image": "kohrapha/awscollector:v0.1.13",
-        "cpu": "100",
-        "memory": "100",
+        "image": "kohrapha/awscollector:v0.1.0",
+        "cpu": "1000",
+        "memory": "1000",
         "portMappings": [
           {
             "containerPort": 55680,
@@ -141,9 +141,10 @@
           }
         ],
         "essential": true,
-        "entryPoint": [],
-        "command": [],
-        "environment": [],
+        "command": ["--config=/etc/otel-config.yaml", "--log-level=DEBUG"],
+        "links": [
+          "nginx-prometheus-exporter"
+        ],
         "dependsOn": [],
         "logConfiguration": {
           "logDriver": "awslogs",
