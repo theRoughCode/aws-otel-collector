@@ -60,10 +60,17 @@ receivers:
 
 exporters:
   awsemf:
-    log_group_name: 'awscollector'
+    log_group_name: 'awscollector-test'
     region: 'us-west-2'
-    log_stream_name: otel-stream
+    log_stream_name: metric-declarations
     dimension_rollup_option: 'NoDimensionRollup'
+    metric_declarations:
+    - dimensions: [['Service', 'Namespace'], ['pod_name', 'container_name', 'OTelLib']]
+      metric_name_selectors:
+      - '^go_memstats_alloc_bytes_total$'
+    - dimensions: [['app_kubernetes_io_component', 'Namespace'], ['app_kubernetes_io_name', 'OTelLib']]
+      metric_name_selectors:
+      - '^go_goroutines$'
 
 service:
   pipelines:
