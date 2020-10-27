@@ -2,36 +2,73 @@ extensions:
   health_check:
 
 receivers:
-  otlp:
-    protocols:
-      grpc:
-        endpoint: 0.0.0.0:55680
-      http:
-        endpoint: 0.0.0.0:55681
-  awsxray:
-    endpoint: 0.0.0.0:2000
-    transport: udp
-
-processors:
-  batch/traces:
-    timeout: 1s
-    send_batch_size: 50
-  batch/metrics:
-    timeout: 60s
+  prometheus:
+    config:
+      scrape_configs:
+      - job_name: kubernetes-service-endpoints
+        sample_limit: 10000
+        kubernetes_sd_configs:
+        - role: endpoints
+        relabel_configs:
+        - action: keep
+          regex: true
+          source_labels:
+          - __meta_kubernetes_service_annotation_prometheus_io_scrape
+        - action: replace
+          regex: (https?)
+          source_labels:
+          - __meta_kubernetes_service_annotation_prometheus_io_scheme
+          target_label: __scheme__
+        - action: replace
+          regex: (.+)
+          source_labels:
+          - __meta_kubernetes_service_annotation_prometheus_io_path
+          target_label: __metrics_path__
+        - action: replace
+          regex: ([^:]+)(?::\d+)?;(\d+)
+          replacement: $$1:$$2
+          source_labels:
+          - __address__
+          - __meta_kubernetes_service_annotation_prometheus_io_port
+          target_label: __address__
+        - action: labelmap
+          regex: __meta_kubernetes_service_label_(.+)
+        - action: replace
+          source_labels:
+          - __meta_kubernetes_namespace
+          target_label: Namespace
+        - action: replace
+          source_labels:
+          - __meta_kubernetes_service_name
+          target_label: Service
+        - action: replace
+          source_labels:
+          - __meta_kubernetes_pod_node_name
+          target_label: kubernetes_node
+        - action: replace
+          source_labels:
+          - __meta_kubernetes_pod_name
+          target_label: pod_name
+        - action: replace
+          source_labels:
+          - __meta_kubernetes_pod_container_name
+          target_label: container_name
+        metric_relabel_configs:
+        - source_labels: [__name__]
+          regex: 'go_gc_duration_seconds.*'
+          action: drop
 
 exporters:
-  awsxray:
   awsemf:
+    log_group_name: 'awscollector'
+    region: 'us-west-2'
+    log_stream_name: otel-stream
+    dimension_rollup_option: 'NoDimensionRollup'
 
 service:
   pipelines:
-    traces:
-      receivers: [otlp,awsxray]
-      processors: [batch/traces]
-      exporters: [awsxray]
     metrics:
-      receivers: [otlp]
-      processors: [batch/metrics]
+      receivers: [prometheus]
       exporters: [awsemf]
 
   extensions: [health_check]

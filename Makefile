@@ -39,7 +39,7 @@ LDFLAGS=-ldflags "-s -w -X $(BUILD_INFO_IMPORT_PATH).GitHash=$(GIT_SHA) \
 
 GOOS=$(shell go env GOOS)
 GOARCH=$(shell go env GOARCH)
-DOCKER_NAMESPACE=amazon
+DOCKER_NAMESPACE=kohrapha
 COMPONENT=awscollector
 LINT=$(PWD)/bin/golangci-lint
 STATIC_CHECK=$(PWD)/bin/staticcheck
@@ -100,6 +100,27 @@ docker-compose:
 .PHONY: docker-stop
 docker-stop:
 	docker stop $(shell docker ps -aq)
+
+.PHONY: docker-update
+docker-update:
+	$(MAKE) docker-build
+	$(MAKE) docker-push
+
+.PHONY: pod-update
+pod-update:
+	kubectl delete pod -n eks-aoc --selector=app=aoc-prometheus
+
+.PHONY: pod-describe
+pod-describe:
+	kubectl describe pod -n eks-aoc --selector=app=aoc-prometheus
+
+.PHONY: pod-logs
+pod-logs:
+	kubectl logs -n eks-aoc --selector=app=aoc-prometheus -f
+
+.PHONY: kube-all
+kube-all:
+	kubectl get all -n eks-aoc
 
 .PHONY: test
 test:
