@@ -78,6 +78,10 @@ package-deb: build
 	ARCH=amd64 TARGET_SUPPORTED_ARCH=x86_64 DEST=build/packages/debian/amd64 tools/packaging/debian/create_deb.sh
 	ARCH=arm64 TARGET_SUPPORTED_ARCH=aarch64 DEST=build/packages/debian/arm64 tools/packaging/debian/create_deb.sh
 
+.PHONY: bench
+bench:
+	go test -benchmem -run=^$$ github.com/open-telemetry/opentelemetry-collector-contrib/exporter/awsemfexporter -bench=. > new.txt
+
 .PHONY: docker-build
 docker-build: 
 	docker build -t $(DOCKER_NAMESPACE)/$(COMPONENT):$(VERSION) -f ./cmd/$(COMPONENT)/Dockerfile .

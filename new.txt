@@ -1,0 +1,9 @@
+goos: darwin
+goarch: amd64
+pkg: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/awsemfexporter
+BenchmarkTranslateOtToCWMetricWithInstrLibrary-12       	  128736	      9182 ns/op	    7190 B/op	     122 allocs/op
+BenchmarkTranslateOtToCWMetricWithoutInstrLibrary-12    	  138549	      8475 ns/op	    6869 B/op	     112 allocs/op
+BenchmarkTranslateOtToCWMetricWithNamespace-12          	72381180	        16.5 ns/op	       0 B/op	       0 allocs/op
+BenchmarkTranslateCWMetricToEMF-12                      	   53839	     22283 ns/op	   84391 B/op	      45 allocs/op
+PASS
+ok  	github.com/open-telemetry/opentelemetry-collector-contrib/exporter/awsemfexporter	6.717s
