@@ -145,6 +145,11 @@ lint-static-check:
 lint: lint-static-check
 	$(LINT) run --timeout 5m
 
+.PHONY: lint-fmt
+lint-fmt:
+	make -C pkg/opentelemetry-collector-contrib/exporter/awsemfexporter fmt
+	make -C pkg/opentelemetry-collector-contrib/exporter/awsemfexporter lint
+
 .PHONY: install-tools
 install-tools:
 	GOBIN=$(PWD)/bin go install github.com/golangci/golangci-lint/cmd/golangci-lint
