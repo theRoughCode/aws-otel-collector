@@ -65,12 +65,15 @@ exporters:
     log_stream_name: metric-declarations
     dimension_rollup_option: 'NoDimensionRollup'
     metric_declarations:
-    - dimensions: [['Service', 'Namespace'], ['pod_name', 'container_name', 'OTelLib']]
+    - dimensions: [['Service', 'Namespace'], ['pod_name', 'container_name']]
       metric_name_selectors:
       - '^go_memstats_alloc_bytes_total$'
-    - dimensions: [['app_kubernetes_io_component', 'Namespace'], ['app_kubernetes_io_name', 'OTelLib']]
+    - dimensions: [['app_kubernetes_io_component', 'Namespace'], ['app_kubernetes_io_name'], ['Invalid', 'Namespace']]
       metric_name_selectors:
       - '^go_goroutines$'
+    - dimensions: [['Namespace', 'app_kubernetes_io_component', 'Namespace']]
+      metric_name_selectors:
+      - '^go_.+$'
 
 service:
   pipelines:
