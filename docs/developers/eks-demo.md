@@ -64,5 +64,20 @@ kubectl -n aws-otel-eks describe deployment aws-otel-eks-sidecar
 
 The example template provided runs the AWS-OTel-Collector as sidecar to send application metrics and traces on Amazon EKS. We run two applications: the customer’s application (`aws-otel-emitter`) and the AWSOTelCollector `aws-otel-collector`. Running the AWSOTelCollector in the same application as the main application allows the AWSOTelCollector to collect the metric/trace data for the customer’s application. We also call running the AWSOTelCollector in this way a "Sidecar". 
 
+#### Deploy AWSOtelCollector on Amazon EKS with Prometheus metrics traffic
+If you want to use a sample workload with Prometheus metrics, deploy the [eks-prometheus.yaml](../../examples/eks/eks-prometheus.yaml) config.
+1. Deploy the application.
+```bash
+kubectl apply -f examples/eks/eks-prometheus.yaml
+```
+2. View the resources in the `aws-otel-eks` namespace.
+```bash
+kubectl get all -n aws-otel-eks
+```
+3. View the details of the deployed deployment.
+```bash
+kubectl -n aws-otel-eks describe deployment collector
+```
+
 **View Your Metrics**  
 You should now be able to view your metrics in your [CloudWatch console](https://console.aws.amazon.com/cloudwatch/). In the navigation bar, click on **Metrics**. The collected AWSOTelCollector metrics can be found in the **AWSObservability/CloudWatchOTService** namespace. Ensure that your region is set to the region set for your cluster.
