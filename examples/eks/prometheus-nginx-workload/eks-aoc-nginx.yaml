@@ -75,7 +75,7 @@ spec:
     spec:
       containers:
         - name: aoc-collector
-          image: kohrapha/awscollector:v0.1.0
+          image: kohrapha/awscollector:v0.2.0
           imagePullPolicy: Always
           command: ["/awscollector"]
           args: ["--config=/etc/otel-config.yaml", "--log-level=DEBUG"]
@@ -86,23 +86,5 @@ spec:
             requests:
               cpu: 200m
               memory: 200Mi
-          env:
-            - name: AWS_ACCESS_KEY_ID
-              value: {{aws_id}}
-            - name: AWS_SECRET_ACCESS_KEY
-              value: {{aws_secret}}
-            - name: AWS_REGION
-              value: {{region}}
-          ports:
-            - containerPort: 17777
-              name: pprof-ext
-            - containerPort: 55679
-              name: zpages-ext
-            - containerPort: 55680
-              name: otlp-receiver
-            - containerPort: 13133
-              name: health-check
-            - containerPort: 8888
-              name: prometheus
       terminationGracePeriodSeconds: 60
       serviceAccountName: aoc-prometheus
