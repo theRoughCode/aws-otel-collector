@@ -78,13 +78,28 @@ package-deb: build
 	ARCH=amd64 TARGET_SUPPORTED_ARCH=x86_64 DEST=build/packages/debian/amd64 tools/packaging/debian/create_deb.sh
 	ARCH=arm64 TARGET_SUPPORTED_ARCH=aarch64 DEST=build/packages/debian/arm64 tools/packaging/debian/create_deb.sh
 
+.PHONY: docker-component # Not intended to be used directly
+docker-component: check-component
+	GOOS=linux $(MAKE) $(COMPONENT)
+	cp ./bin/$(COMPONENT)_$(GOOS)_$(GOARCH) ./cmd/$(COMPONENT)/$(COMPONENT)
+	cp ./config.yaml ./cmd/$(COMPONENT)/
+	docker build -t $(DOCKER_NAMESPACE)/$(COMPONENT):$(VERSION) ./cmd/$(COMPONENT)/
+	rm ./cmd/$(COMPONENT)/$(COMPONENT)
+	rm ./cmd/$(COMPONENT)/config.yaml
+
+.PHONY: check-component
+check-component:
+ifndef COMPONENT
+	$(error COMPONENT variable was not defined)
+endif
+
 .PHONY: bench
 bench:
 	go test -benchmem -run=^$$ github.com/open-telemetry/opentelemetry-collector-contrib/exporter/awsemfexporter -bench=. > new.txt
 
 .PHONY: docker-build
-docker-build: 
-	docker build -t $(DOCKER_NAMESPACE)/$(COMPONENT):$(VERSION) -f ./cmd/$(COMPONENT)/Dockerfile .
+docker-build: awscollector
+	$(MAKE) docker-component
 
 .PHONY: docker-push
 docker-push:
