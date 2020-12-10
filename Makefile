@@ -3,6 +3,7 @@
 AOC_IMPORT_PATH=github.com/aws-observability/aws-otel-collector
 VERSION := $(shell cat VERSION)
 PROJECTNAME := $(shell basename "$(PWD)")
+EKS_NAMESPACE=eks-aoc
 
 GIT_SHA=$(shell git rev-parse HEAD)
 DATE=$(shell date -u +'%Y-%m-%dT%H:%M:%SZ')
@@ -127,19 +128,19 @@ docker-update:
 
 .PHONY: pod-update
 pod-update:
-	kubectl delete pod -n eks-aoc --selector=app=aoc-prometheus
+	kubectl delete pod -n ${EKS_NAMESPACE} --selector=app=aoc-prometheus
 
 .PHONY: pod-describe
 pod-describe:
-	kubectl describe pod -n eks-aoc --selector=app=aoc-prometheus
+	kubectl describe pod -n ${EKS_NAMESPACE} --selector=app=aoc-prometheus
 
 .PHONY: pod-logs
 pod-logs:
-	kubectl logs -n eks-aoc --selector=app=aoc-prometheus -f
+	kubectl logs -n ${EKS_NAMESPACE} --selector=app=aoc-prometheus -f
 
 .PHONY: kube-all
 kube-all:
-	kubectl get all -n eks-aoc
+	kubectl get all -n ${EKS_NAMESPACE}
 
 .PHONY: test
 test:
