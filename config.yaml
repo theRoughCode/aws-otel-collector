@@ -1,84 +1,46 @@
 extensions:
-  health_check:
+  ecs_observer:
+    refresh_interval: 15s
+    cluster_name: 'aoc-ecs'
+    cluster_region: 'us-west-2'
+    sd_result_file: '/etc/ecs_sd_targets.yaml'
+    # docker_label:
+    #   job_name_label: 'ECS_PROMETHEUS_JOB_NAME'
+    #   metrics_path_label: 'ECS_PROMETHEUS_METRICS_PATH'
+    #   port_label: 'ECS_PROMETHEUS_EXPORTER_PORT_SUBSET_A'
+    task_definitions:
+    - job_name: 'task_def_1'
+      metrics_path: '/metrics'
+      metrics_ports: '9113;5678'
+      task_definition_arn_pattern: '.*:task-definition/aoc-ec2-nginx:[0-9]+'
 
 receivers:
+  receiver_creator:
+    watch_observers: [ecs_observer]
+    receivers:
+      prometheus_simple:
+        rule: type.task
+        config:
+          metrics_path: '`metricsPath`'
   prometheus:
     config:
       scrape_configs:
-      - job_name: kubernetes-service-endpoints
-        sample_limit: 10000
-        kubernetes_sd_configs:
-        - role: endpoints
-        relabel_configs:
-        - action: keep
-          regex: true
-          source_labels:
-          - __meta_kubernetes_service_annotation_prometheus_io_scrape
-        - action: replace
-          regex: (https?)
-          source_labels:
-          - __meta_kubernetes_service_annotation_prometheus_io_scheme
-          target_label: __scheme__
-        - action: replace
-          regex: (.+)
-          source_labels:
-          - __meta_kubernetes_service_annotation_prometheus_io_path
-          target_label: __metrics_path__
-        - action: replace
-          regex: ([^:]+)(?::\d+)?;(\d+)
-          replacement: $$1:$$2
-          source_labels:
-          - __address__
-          - __meta_kubernetes_service_annotation_prometheus_io_port
-          target_label: __address__
-        - action: labelmap
-          regex: __meta_kubernetes_service_label_(.+)
-        - action: replace
-          source_labels:
-          - __meta_kubernetes_namespace
-          target_label: Namespace
-        - action: replace
-          source_labels:
-          - __meta_kubernetes_service_name
-          target_label: Service
-        - action: replace
-          source_labels:
-          - __meta_kubernetes_pod_node_name
-          target_label: kubernetes_node
-        - action: replace
-          source_labels:
-          - __meta_kubernetes_pod_name
-          target_label: pod_name
-        - action: replace
-          source_labels:
-          - __meta_kubernetes_pod_container_name
-          target_label: container_name
-        metric_relabel_configs:
-        - source_labels: [__name__]
-          regex: 'go_gc_duration_seconds.*'
-          action: drop
+      - job_name: "task_def_1"
+        file_sd_configs:
+        - files:
+          - '/etc/ecs_sd_targets.yaml'
 
 exporters:
   awsemf:
     log_group_name: 'awscollector-test'
     region: 'us-west-2'
-    log_stream_name: metric-declarations
+    log_stream_name: ecs-sd
     dimension_rollup_option: 'NoDimensionRollup'
-    metric_declarations:
-    - dimensions: [['Service', 'Namespace'], ['pod_name', 'container_name']]
-      metric_name_selectors:
-      - '^go_memstats_alloc_bytes_total$'
-    - dimensions: [['app_kubernetes_io_component', 'Namespace'], ['app_kubernetes_io_name'], ['Invalid', 'Namespace']]
-      metric_name_selectors:
-      - '^go_goroutines$'
-    - dimensions: [['Namespace', 'app_kubernetes_io_component', 'Namespace']]
-      metric_name_selectors:
-      - '^go_.+$'
 
 service:
   pipelines:
     metrics:
-      receivers: [prometheus]
+      receivers: [receiver_creator]
       exporters: [awsemf]
 
-  extensions: [health_check]
+  extensions: [ecs_observer]

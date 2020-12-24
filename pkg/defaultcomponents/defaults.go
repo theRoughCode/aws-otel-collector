@@ -21,14 +21,16 @@ import (
 	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/awsxrayexporter"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/datadogexporter"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/dynatraceexporter"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/newrelicexporter"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/logzioexporter"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/newrelicexporter"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/sapmexporter"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/signalfxexporter"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/splunkhecexporter"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/extension/observer/ecsobserver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/metricstransformprocessor"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/awsecscontainermetricsreceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/awsxrayreceiver"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/receivercreator"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/component/componenterror"
 	"go.opentelemetry.io/collector/exporter/fileexporter"
@@ -49,8 +51,16 @@ func Components() (component.Factories, error) {
 		return component.Factories{}, err
 	}
 
+	factories.Extensions, err = component.MakeExtensionFactoryMap(
+		ecsobserver.NewFactory(),
+	)
+	if err != nil {
+		errs = append(errs, err)
+	}
+
 	// enable the selected receivers
 	factories.Receivers, err = component.MakeReceiverFactoryMap(
+		receivercreator.NewFactory(),
 		prometheusreceiver.NewFactory(),
 		otlpreceiver.NewFactory(),
 		awsecscontainermetricsreceiver.NewFactory(),
