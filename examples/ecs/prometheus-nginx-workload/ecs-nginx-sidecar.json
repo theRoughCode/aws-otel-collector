@@ -130,7 +130,7 @@
       },
       {
         "name": "aws-otel-collector",
-        "image": "kohrapha/awscollector:v0.1.0",
+        "image": "kohrapha/awscollector:v0.4.0",
         "cpu": "1000",
         "memory": "1000",
         "portMappings": [
